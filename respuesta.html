@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Confirmación de Pago - Churros Levi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #fefefe;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    .mensaje {
+      padding: 2rem;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .mensaje h1 {
+      color: #4caf50;
+    }
+
+    .mensaje.error h1 {
+      color: #f44336;
+    }
+  </style>
+</head>
+<body>
+  <div class="mensaje" id="mensaje">
+    <h1>Procesando...</h1>
+    <p>Estamos verificando tu pago, por favor espera unos segundos.</p>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const estado = params.get("x_response"); // estado del pago: Approved, Rejected, Pending
+    const ref = params.get("x_transaction_id");
+    const mensaje = document.getElementById("mensaje");
+
+    if (estado === "Approved") {
+      mensaje.innerHTML = `
+        <h1>¡Pago exitoso!</h1>
+        <p>Gracias por tu compra en Churros Levi.</p>
+        <p><strong>ID de transacción:</strong> ${ref}</p>
+      `;
+    } else if (estado === "Rejected") {
+      mensaje.classList.add("error");
+      mensaje.innerHTML = `
+        <h1>Pago rechazado</h1>
+        <p>Lo sentimos, tu pago no fue aprobado.</p>
+        <p>Por favor, intenta nuevamente.</p>
+      `;
+    } else if (estado === "Pending") {
+      mensaje.innerHTML = `
+        <h1>Pago pendiente</h1>
+        <p>Tu pago está siendo procesado. Te notificaremos cuando se confirme.</p>
+        <p><strong>ID de transacción:</strong> ${ref}</p>
+      `;
+    } else {
+      mensaje.classList.add("error");
+      mensaje.innerHTML = `
+        <h1>Error</h1>
+        <p>No se pudo determinar el estado del pago.</p>
+      `;
+    }
+  </script>
+</body>
+</html>

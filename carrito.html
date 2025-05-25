@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="shortcut icon" href="img/churros_levi.ico" type="image/x-icon">
+  <title>Carrito - Churros Levi</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #fafafa;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #fff;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 14px 12px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f0a500;
+      color: white;
+    }
+
+    button {
+      cursor: pointer;
+      padding: 6px 12px;
+      margin: 0 3px;
+      border: none;
+      background-color: #f0a500;
+      color: white;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #cf8600;
+    }
+
+    .total {
+      text-align: right;
+      margin-top: 25px;
+      font-weight: bold;
+      font-size: 1.3em;
+    }
+
+    #empty-cart {
+      display: block;
+      margin: 30px auto 0 auto;
+      background-color: #d9534f;
+    }
+
+    #empty-cart:hover {
+      background-color: #b52b27;
+    }
+
+    #checkout-btn {
+      display: block;
+      margin: 30px auto;
+      background-color: #009ee3;
+      padding: 12px 24px;
+      font-size: 1.2em;
+      border-radius: 6px;
+    }
+
+    #checkout-btn:hover {
+      background-color: #007bbf;
+    }
+
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      thead tr {
+        display: none;
+      }
+
+      tbody tr {
+        margin-bottom: 15px;
+        background: white;
+        padding: 12px;
+        border-radius: 6px;
+        box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      }
+
+      tbody td {
+        border: none;
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+      }
+
+      tbody td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 12px;
+        width: 45%;
+        padding-left: 15px;
+        font-weight: bold;
+        text-align: left;
+      }
+
+      button {
+        margin-top: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Tu Carrito de Compras</h1>
+
+  <table id="cart-table">
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Precio Unitario</th>
+        <th>Cantidad</th>
+        <th>Subtotal</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="cart-body">
+      <!-- Productos se cargan aquí dinámicamente -->
+    </tbody>
+  </table>
+
+  <div class="total" id="cart-total">Total: $0</div>
+
+  <button id="empty-cart">Vaciar Carrito</button>
+  <button id="checkout-btn">Pagar con Epayco</button>
+
+  <!-- Script Epayco -->
+  <script src="https://checkout.epayco.co/checkout.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+  const MAX_CANTIDAD = 10;
+
+  const cartBody = document.getElementById('cart-body');
+  const cartTotal = document.getElementById('cart-total');
+  const emptyCartBtn = document.getElementById('empty-cart');
+  const checkoutBtn = document.getElementById('checkout-btn');
+
+  if (!(cartBody && cartTotal && emptyCartBtn && checkoutBtn)) return;
+
+  let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
+
+  function formatPrice(num) {
+    return '$' + num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  function saveCart() {
+    try {
+      localStorage.setItem('carrito', JSON.stringify(carrito));
+    } catch (e) {
+      alert('Error: El carrito está demasiado lleno. Intenta eliminar algunos productos.');
+      console.error('Error guardando carrito:', e);
+    }
+  }
+
+  function renderCart() {
+    cartBody.innerHTML = '';
+    if (carrito.length === 0) {
+      cartBody.innerHTML = '<tr><td colspan="5">Tu carrito está vacío.</td></tr>';
+      cartTotal.textContent = 'Total: $0.00';
+      return;
+    }
+
+    let total = 0;
+
+    carrito.forEach((item, index) => {
+      const subtotal = item.price * item.cantidad;
+      total += subtotal;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td data-label="Producto">${item.name}</td>
+        <td data-label="Precio Unitario">${formatPrice(item.price)}</td>
+        <td data-label="Cantidad">
+          <button class="decrease" data-index="${index}" aria-label="Disminuir cantidad de ${item.name}">-</button>
+          ${item.cantidad}
+          <button class="increase" data-index="${index}" aria-label="Aumentar cantidad de ${item.name}">+</button>
+        </td>
+        <td data-label="Subtotal">${formatPrice(subtotal)}</td>
+        <td data-label="Acciones"><button class="remove" data-index="${index}" aria-label="Eliminar ${item.name} del carrito">Eliminar</button></td>
+      `;
+      cartBody.appendChild(tr);
+    });
+
+    cartTotal.textContent = `Total: ${formatPrice(total)}`;
+  }
+
+  cartBody.addEventListener('click', (e) => {
+    const target = e.target;
+    if (!target.dataset.index) return;
+    const index = parseInt(target.dataset.index);
+
+    if (target.classList.contains('increase')) {
+      if (carrito[index].cantidad < MAX_CANTIDAD) {
+        carrito[index].cantidad++;
+        saveCart();
+        renderCart();
+      } else {
+        alert(`Cantidad máxima (${MAX_CANTIDAD}) alcanzada para este producto.`);
+      }
+    } else if (target.classList.contains('decrease')) {
+      if (carrito[index].cantidad > 1) {
+        carrito[index].cantidad--;
+        saveCart();
+        renderCart();
+      } else {
+        if (confirm('¿Quieres eliminar este producto del carrito?')) {
+          carrito.splice(index, 1);
+          saveCart();
+          renderCart();
+        }
+      }
+    } else if (target.classList.contains('remove')) {
+      carrito.splice(index, 1);
+      saveCart();
+      renderCart();
+    }
+  });
+
+  emptyCartBtn.addEventListener('click', () => {
+    if (confirm('¿Seguro que quieres vaciar el carrito?')) {
+      carrito = [];
+      saveCart();
+      renderCart();
+    }
+  });
+
+  checkoutBtn.addEventListener('click', () => {
+    if (carrito.length === 0) {
+      alert('Tu carrito está vacío.');
+      return;
+    }
+
+    const totalAmount = carrito.reduce((sum, item) => sum + item.price * item.cantidad, 0);
+
+    const handler = ePayco.checkout.configure({
+      key: '5cee31c5d509dafe05d2c25f73377a2d', // Cambia por tu key real
+      test: false
+    });
+
+    handler.open({
+      name: 'Churros Levi',
+      description: 'Compra de productos',
+      currency: 'cop',
+      amount: totalAmount,
+      tax_base: '0',
+      tax: '0',
+      country: 'co',
+      lang: 'es',
+      external: 'false',
+      response: 'pago-exitoso.html',
+      confirmation: 'https://tuservidor.com/api/confirmacion-pago' // Cambia si tienes backend
+    });
+  });
+
+  renderCart();
+});
+
+  </script>
+</body>
+</html>

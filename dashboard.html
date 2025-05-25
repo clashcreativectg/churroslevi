@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard - Churros Levi</title>
+  <link rel="shortcut icon" href="img/churros_levi.ico" type="image/x-icon" />
+  <style>
+    :root {
+  --primary: #8b4513;
+  --secondary: #f5deb3;
+  --bg: #fff8f0;
+  --accent: #d2691e;
+  --text-dark: #2c2c2c;
+  --text-light: #fafafa;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --card-bg: #fff7ec;
+  --highlight: #f1c27d;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-dark);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  flex-direction: row;
+}
+
+nav.sidebar {
+  width: 250px;
+  background: var(--primary);
+  color: var(--text-light);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 8px var(--shadow);
+}
+
+nav.sidebar h2 {
+  font-size: 1.8rem;
+  margin-bottom: 30px;
+  text-align: center;
+  font-weight: bold;
+  color: var(--secondary);
+}
+
+nav.sidebar a {
+  color: var(--text-light);
+  text-decoration: none;
+  padding: 12px 15px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+nav.sidebar a:hover,
+nav.sidebar a.active {
+  background-color: var(--secondary);
+  color: var(--primary);
+}
+
+.logout-btn {
+  margin-top: auto;
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.logout-btn:hover {
+  background: #bd2130;
+}
+
+main.content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  background: var(--card-bg);
+}
+
+section {
+  display: none;
+}
+
+section.active {
+  display: block;
+}
+
+h1, h2, legend {
+  color: var(--primary);
+  margin-bottom: 16px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px var(--shadow);
+  overflow: hidden;
+  margin-bottom: 25px;
+}
+
+th, td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+th {
+  background-color: var(--primary);
+  color: white;
+}
+
+tr:hover {
+  background-color: var(--highlight);
+}
+
+button.btn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button.btn-edit {
+  background-color: var(--accent);
+  color: white;
+}
+
+button.btn-edit:hover {
+  background-color: var(--primary);
+}
+
+button.btn-delete {
+  background-color: #e74c3c;
+  color: white;
+  margin-left: 8px;
+}
+
+button.btn-delete:hover {
+  background-color: #c0392b;
+}
+
+.pedido {
+  background: white;
+  padding: 18px 22px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px var(--shadow);
+  margin-bottom: 20px;
+}
+
+.pedido-header {
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: var(--primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pedido-items {
+  margin-top: 10px;
+  list-style: disc inside;
+}
+
+form {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px var(--shadow);
+  max-width: 650px;
+  margin-top: 25px;
+}
+
+form label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+form input,
+form select {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+form button {
+  background-color: var(--accent);
+  color: white;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  transition: background-color 0.3s ease;
+}
+
+form button:hover {
+  background-color: var(--primary);
+}
+
+#promocionesList {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 10px var(--shadow);
+  max-width: 650px;
+}
+
+#promocionesList ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.promo-card {
+  background-color: var(--card-bg);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 16px;
+  border-radius: 14px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  margin-bottom: 18px;
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.promo-card:hover {
+  transform: translateY(-3px);
+}
+
+.promo-card img {
+  width: 85px;
+  height: 85px;
+  object-fit: cover;
+  border-radius: 10px;
+  flex-shrink: 0;
+  border: 1px solid #ccc;
+}
+
+.promo-details {
+  flex-grow: 1;
+}
+
+.promo-title {
+  font-size: 1.15rem;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.promo-desc {
+  font-size: 0.95rem;
+  color: #555;
+  margin-top: 5px;
+}
+
+.promo-card .btn-delete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #e63946;
+  color: white;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.promo-card .btn-delete:hover {
+  background-color: #c21807;
+}
+
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+    height: auto;
+  }
+
+  nav.sidebar {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    padding: 15px;
+    gap: 10px;
+  }
+
+  nav.sidebar h2 {
+    display: none;
+  }
+
+  .logout-btn {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  main.content {
+    padding: 15px;
+    height: auto;
+  }
+
+  table,
+  form {
+    font-size: 0.9rem;
+  }
+
+  .promo-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .promo-card img {
+    width: 100%;
+    height: auto;
+  }
+}
+  </style>
+
+</head>
+ <!-- Sidebar de navegación -->
+  <nav class="sidebar">
+    <h2>Churros Levi</h2>
+    <a href="#" data-section="productos" class="active">Productos</a>
+    <a href="#" data-section="pedidos">Pedidos</a>
+    <a href="#" data-section="promociones">Promociones</a>
+    <button onclick="logout()" class="logout-btn">Cerrar Sesión</button>
+  </nav>
+
+  <!-- Contenido principal -->
+  <main class="content">
+
+    <!-- Sección: Productos -->
+    <section id="productos" class="section active">
+      <h1>Gestión de Productos</h1>
+
+      <table id="productosTable">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Categoría</th>
+            <th>Precio</th>
+            <th>Imagen</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Productos cargados con JS -->
+        </tbody>
+      </table>
+
+      <h2>Agregar Producto</h2>
+      <form id="addProductForm">
+        <label for="nombre">Nombre:</label>
+        <input type="text" id="nombre" required />
+
+        <label for="descripcion">Descripción:</label>
+        <input type="text" id="descripcion" />
+
+        <label for="categoria">Categoría:</label>
+        <select id="categoria" required>
+          <option value="">Selecciona una categoría</option>
+          <option value="churros">Churros</option>
+          <option value="rellenos">Churros Rellenos</option>
+          <option value="fit">Churros Fit</option>
+          <option value="bebidas">Bebidas</option>
+          <option value="arepas">Arepas</option>
+        </select>
+
+        <label for="precio">Precio:</label>
+        <input type="number" id="precio" min="1" required />
+
+        <label for="imagen">Subir Imagen:</label>
+        <input type="file" id="imagen" accept="image/*" />
+
+        <button type="submit">Agregar Producto</button>
+      </form>
+    </section>
+
+    <!-- Sección: Pedidos -->
+    <section id="pedidos" class="section">
+      <h1>Pedidos Recientes</h1>
+      <div id="pedidosContainer">
+        <!-- Pedidos cargados con JS -->
+      </div>
+    </section>
+
+    <!-- Sección: Promociones -->
+    <section id="promociones" class="section">
+      <h1>Promociones</h1>
+
+      <div id="promocionesList">
+        <ul>
+          <!-- Promociones cargadas dinámicamente -->
+        </ul>
+      </div>
+
+      <form id="addPromotionForm" enctype="multipart/form-data">
+        <fieldset>
+          <legend>Agregar nueva promoción</legend>
+
+          <label for="promoNombre">Nombre de la promoción:</label>
+          <input type="text" id="promoNombre" required placeholder="Ej. Churros 2x1" />
+
+          <label for="promoPrecio">Precio:</label>
+          <input type="number" id="promoPrecio" step="0.01" min="0" required placeholder="Ej. 29.99" />
+
+          <label for="promoImagen">Imagen:</label>
+          <input type="file" id="promoImagen" accept="image/*" />
+
+          <button type="submit">Agregar Promoción</button>
+        </fieldset>
+      </form>
+    </section>
+  </main>
+
+<script>
+
+  const adminLogueado = localStorage.getItem("adminLogueadoChurrosLevi");
+  if (!adminLogueado) {
+    alert("Debes iniciar sesión para acceder al panel.");
+    window.location.href = "login.html";
+  }
+
+  // --- CLAVES LOCALSTORAGE ---
+  const productosKey = "productosChurrosLevi";
+  const promocionesKey = "promocionesChurrosLevi";
+  const pedidosKey = "pedidosChurrosLevi";
+
+  // --- NAVEGACIÓN DE SECCIONES ---
+  document.addEventListener("DOMContentLoaded", () => {
+    const links = document.querySelectorAll("nav.sidebar a");
+    const sections = document.querySelectorAll("main.content section");
+
+    links.forEach((link) => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        const target = link.dataset.section;
+        links.forEach((l) => l.classList.remove("active"));
+        link.classList.add("active");
+        sections.forEach((sec) => {
+          sec.classList.toggle("active", sec.id === target);
+        });
+      });
+    });
+
+    renderProductos();
+    renderPromociones();
+    renderPedidos();
+  });
+
+  // --- PRODUCTOS ---
+  let productos = JSON.parse(localStorage.getItem(productosKey)) || [];
+
+  function guardarProductos() {
+    localStorage.setItem(productosKey, JSON.stringify(productos));
+  }
+
+  function renderProductos() {
+    const tbody = document.querySelector("#productosTable tbody");
+    tbody.innerHTML = "";
+    productos.forEach((p) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+      <td>${p.nombre}</td>
+      <td>${p.descripcion}</td>
+      <td>${p.categoria}</td>
+      <td>$${p.precio.toLocaleString()}</td>
+      <td><img src="${p.imagen}" alt="${p.nombre}" width="50" /></td>
+      <td>
+        <button class="btn btn-edit" data-id="${p.id}">Editar</button>
+        <button class="btn btn-delete" data-id="${p.id}">Eliminar</button>
+      </td>
+    `;
+      tbody.appendChild(tr);
+    });
+
+    document.querySelectorAll(".btn-edit").forEach((btn) => {
+      btn.onclick = (e) => editarProducto(+e.target.dataset.id);
+    });
+
+    document.querySelectorAll(".btn-delete").forEach((btn) => {
+      btn.onclick = (e) => eliminarProducto(+e.target.dataset.id);
+    });
+  }
+
+  function editarProducto(id) {
+    const producto = productos.find((p) => p.id === id);
+    if (!producto) return alert("Producto no encontrado");
+
+    document.getElementById("nombre").value = producto.nombre;
+    document.getElementById("descripcion").value = producto.descripcion;
+    document.getElementById("categoria").value = producto.categoria;
+    document.getElementById("precio").value = producto.precio;
+    alert("Para cambiar la imagen, seleccione un archivo nuevo.");
+
+    const form = document.getElementById("addProductForm");
+    form.dataset.editingId = id;
+    form.querySelector("button[type='submit']").textContent = "Actualizar Producto";
+  }
+
+  function eliminarProducto(id) {
+    if (!confirm("¿Seguro que quieres eliminar este producto?")) return;
+    productos = productos.filter((p) => p.id !== id);
+    guardarProductos();
+    renderProductos();
+  }
+
+  document.getElementById("addProductForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const nombre = document.getElementById("nombre").value.trim();
+    const descripcion = document.getElementById("descripcion").value.trim();
+    const categoria = document.getElementById("categoria").value;
+    const precio = +document.getElementById("precio").value;
+    const inputImagen = document.getElementById("imagen");
+    const imagenFile = inputImagen.files[0];
+
+    if (!nombre || !categoria || !precio) {
+      alert("Por favor, completa todos los campos obligatorios");
+      return;
+    }
+
+    const form = e.target;
+    const editingId = form.dataset.editingId;
+
+    async function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function guardar() {
+      let imagenData = "img/default.png";
+      if (imagenFile) {
+        if (!imagenFile.type.startsWith("image/")) {
+          alert("Solo se permiten archivos de imagen.");
+          return;
+        }
+        if (imagenFile.size > 2 * 1024 * 1024) {
+          alert("La imagen es muy grande. Máximo permitido: 2MB.");
+          return;
+        }
+        imagenData = await fileToBase64(imagenFile);
+      }
+
+      if (editingId) {
+        const idx = productos.findIndex((p) => p.id === +editingId);
+        if (idx < 0) return alert("Producto no encontrado");
+
+        productos[idx] = {
+          ...productos[idx],
+          nombre,
+          descripcion,
+          categoria,
+          precio,
+          ...(imagenFile && { imagen: imagenData }),
+        };
+
+        alert("Producto actualizado correctamente");
+        delete form.dataset.editingId;
+        form.querySelector("button[type='submit']").textContent = "Agregar Producto";
+      } else {
+        const nuevoProducto = {
+          id: productos.length ? productos[productos.length - 1].id + 1 : 1,
+          nombre,
+          descripcion,
+          categoria,
+          precio,
+          imagen: imagenData,
+        };
+        productos.push(nuevoProducto);
+        alert("Producto agregado correctamente");
+      }
+
+      form.reset();
+      guardarProductos();
+      renderProductos();
+    }
+
+    guardar().catch((err) => alert("Error al procesar la imagen"));
+  });
+
+  // --- PEDIDOS ---
+  function cargarPedidos() {
+    return JSON.parse(localStorage.getItem(pedidosKey)) || [];
+  }
+
+  function renderPedidos() {
+    const pedidos = cargarPedidos();
+    const cont = document.getElementById("pedidosContainer");
+    cont.innerHTML = pedidos.length === 0 ? "<p>No hay pedidos aún.</p>" : "";
+
+    pedidos.forEach((pedido) => {
+      const div = document.createElement("div");
+      div.className = "pedido";
+      div.innerHTML = `
+      <div class="pedido-header">
+        <div><strong>Pedido #${pedido.id}</strong> - ${pedido.nombreCliente}</div>
+        <div><strong>Total:</strong> $${pedido.total.toLocaleString()}</div>
+        <div><strong>Fecha:</strong> ${pedido.fecha}</div>
+      </div>
+      <ul class="pedido-items">
+        ${pedido.productos
+          .map((prod) => `<li>${prod.cantidad} × ${prod.nombre}</li>`)
+          .join("")}
+      </ul>
+    `;
+      cont.appendChild(div);
+    });
+  }
+
+  // --- PROMOCIONES ---
+  function cargarPromociones() {
+    const promosStr = localStorage.getItem(promocionesKey);
+    return promosStr ? JSON.parse(promosStr) : [];
+  }
+
+  function guardarPromociones(promos) {
+    localStorage.setItem(promocionesKey, JSON.stringify(promos));
+  }
+
+  function renderPromociones() {
+    const promociones = cargarPromociones();
+    const ul = document.querySelector("#promocionesList ul");
+    ul.innerHTML = "";
+
+    if (promociones.length === 0) {
+      ul.innerHTML = "<li>No hay promociones agregadas.</li>";
+      return;
+    }
+
+    promociones.forEach((promo, i) => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+      <img src="${promo.imagen}" alt="${promo.nombre}" width="40" style="margin-right: 10px; vertical-align: middle;" />
+      ${promo.nombre || promo.titulo}: $${promo.precio.toFixed(2)}
+    `;
+      const btnDel = document.createElement("button");
+      btnDel.textContent = "Eliminar";
+      btnDel.className = "btn btn-delete";
+      btnDel.onclick = () => {
+        if (confirm(`¿Eliminar promoción "${promo.nombre || promo.titulo}"?`)) {
+          promociones.splice(i, 1);
+          guardarPromociones(promociones);
+          renderPromociones();
+        }
+      };
+      li.appendChild(btnDel);
+      ul.appendChild(li);
+    });
+  }
+
+  document.getElementById("addPromotionForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nombre = document.getElementById("promoNombre").value.trim();
+    const precioStr = document.getElementById("promoPrecio").value.trim();
+    const imagenFile = document.getElementById("promoImagen").files[0];
+
+    if (!nombre) {
+      alert("Debe ingresar el nombre de la promoción.");
+      return;
+    }
+
+    const precio = parseFloat(precioStr);
+    if (isNaN(precio) || precio < 0) {
+      alert("Debe ingresar un precio válido (número positivo).");
+      return;
+    }
+
+    let imagenData = "img/default_promo.png";
+    if (imagenFile) {
+      if (!imagenFile.type.startsWith("image/")) {
+        alert("Solo se permiten archivos de imagen.");
+        return;
+      }
+      if (imagenFile.size > 2 * 1024 * 1024) {
+        alert("La imagen es muy grande. Máximo permitido: 2MB.");
+        return;
+      }
+      imagenData = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(imagenFile);
+      });
+    }
+
+    const promociones = cargarPromociones();
+
+    if (promociones.length >= 10) {
+      alert("Máximo 10 promociones permitidas.");
+      return;
+    }
+
+    promociones.push({
+      id: `promo_${Date.now()}`,
+      titulo: nombre,
+      nombre,
+      precio,
+      imagen: imagenData,
+      precioOriginal: 0,
+      descuento: "",
+      estrellas: 0,
+      fecha: new Date().toLocaleString(),
+    });
+
+    guardarPromociones(promociones);
+    renderPromociones();
+    e.target.reset();
+  });
+
+  function logout() {
+  localStorage.removeItem("adminLogueadoChurrosLevi");
+  window.location.href = "login.html";
+}
+
+</script>

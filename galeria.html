@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="shortcut icon" href="img/churros_levi.ico" type="image/x-icon">
+<title>Galería - Churros Levi</title>
+<style>
+  /* Reset básico */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0; padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #fff8f0;
+    color: #5a3e1b;
+    overflow-x: hidden;
+  }
+
+  /* Navbar */
+  nav {
+    background: #d17e00;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+  }
+  nav .logo {
+    font-weight: 700;
+    font-size: 1.8rem;
+    letter-spacing: 3px;
+    user-select: none;
+  }
+  nav ul {
+    list-style: none;
+    display: flex;
+    gap: 2rem;
+  }
+  nav ul li a {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: color 0.3s ease;
+  }
+  nav ul li a:hover, nav ul li a.active {
+    color: #fff3b0;
+  }
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+  }
+  .hamburger div {
+    width: 25px;
+    height: 3px;
+    background: white;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+  }
+  @media(max-width: 768px) {
+    nav ul {
+      position: fixed;
+      top: 60px;
+      right: -100%;
+      width: 200px;
+      height: calc(100vh - 60px);
+      background: #d17e00;
+      flex-direction: column;
+      padding: 2rem 1rem;
+      gap: 1.5rem;
+      transition: right 0.3s ease;
+      border-left: 3px solid #b06f00;
+    }
+    nav ul.open {
+      right: 0;
+    }
+    .hamburger {
+      display: flex;
+    }
+  }
+
+  /* Contenedor principal */
+  main {
+    max-width: 1100px;
+    margin: 3rem auto 5rem auto;
+    padding: 0 1.5rem;
+  }
+
+  /* Título */
+  h1 {
+    text-align: center;
+    font-size: 2.8rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+  }
+
+  /* Filtros */
+  .filters {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .filters button {
+    background: #d17e00;
+    border: none;
+    color: white;
+    padding: 0.7rem 1.5rem;
+    margin: 0 0.4rem;
+    font-weight: 700;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  .filters button:hover,
+  .filters button.active {
+    background: #b06f00;
+  }
+
+  /* Grid de imágenes */
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.4rem;
+  }
+  .gallery-item {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    border-radius: 12px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+    background: white;
+    transition: transform 0.3s ease;
+  }
+  .gallery-item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 26px rgba(0,0,0,0.3);
+  }
+  .gallery-item img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+    border-radius: 12px;
+    transition: transform 0.5s ease;
+  }
+  .gallery-item:hover img {
+    transform: scale(1.1);
+  }
+  .gallery-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(209,126,0,0.85);
+    color: white;
+    padding: 0.6rem 1rem;
+    font-weight: 600;
+    font-size: 1rem;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    user-select: none;
+  }
+
+  /* Modal */
+  .modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+  }
+  .modal.open {
+    visibility: visible;
+    opacity: 1;
+  }
+  .modal-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 15px;
+    background: #fff8f0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .modal-content img {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 15px 15px 0 0;
+  }
+  .modal-caption {
+    padding: 1rem 1.5rem;
+    font-size: 1.2rem;
+    color: #5a3e1b;
+    font-weight: 600;
+    user-select: none;
+    text-align: center;
+  }
+  .modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #d17e00;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 700;
+    padding: 0.3rem 0.8rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    user-select: none;
+  }
+  .modal-close:hover {
+    background: #b06f00;
+  }
+
+  /* Flechas navegación */
+  .modal-nav {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    transform: translateY(-50%);
+    padding: 0 1rem;
+    pointer-events: none;
+  }
+  .modal-nav button {
+    background: rgba(209,126,0,0.85);
+    border: none;
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: background 0.3s ease;
+    user-select: none;
+  }
+  .modal-nav button:hover {
+    background: #b06f00;
+  }
+
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Churros Levi</div>
+  <div class="hamburger" aria-label="Abrir menú" role="button" tabindex="0">
+    <div></div><div></div><div></div>
+  </div>
+  <ul>
+    <li><a href="index.html">Inicio</a></li>
+    <li><a href="menu.html">Menú</a></li>
+    <li><a href="nosotros.html">Nosotros</a></li>
+    <li><a href="galeria.html" class="active" aria-current="page">Galería</a></li>
+    <li><a href="contacto.html">Contacto</a></li>
+  </ul>
+</nav>
+
+<main>
+  <h1>Galería de Churros Levi</h1>
+
+  <div class="filters" role="group" aria-label="Filtrar imágenes por categoría">
+    <button class="filter-btn active" data-filter="all" aria-pressed="true">Todas</button>
+    <button class="filter-btn" data-filter="tradicional" aria-pressed="false">Tradicional</button>
+    <button class="filter-btn" data-filter="especial" aria-pressed="false">Especiales</button>
+    <button class="filter-btn" data-filter="temporada" aria-pressed="false">Temporada</button>
+  </div>
+
+  <div class="gallery-grid" aria-live="polite">
+    <!-- Ejemplo de items -->
+    <div class="gallery-item" data-category="tradicional" tabindex="0" aria-label="Churros tradicionales con azúcar y canela">
+      <img src="img/churros_clasicos.jpg" alt="Churros tradicionales con azúcar y canela" />
+      <div class="gallery-caption">Tradicional</div>
+    </div>
+    <div class="gallery-item" data-category="especial" tabindex="0" aria-label="Churros rellenos de chocolate">
+      <img src="img/churros_chocolate.jpg" alt="Churros rellenos de chocolate" />
+      <div class="gallery-caption">Especial</div>
+    </div>
+    <div class="gallery-item" data-category="temporada" tabindex="0" aria-label="Churros con fresas">
+      <img src="img/churros_con_fresas.jpeg" alt="Churros con fresas" />
+      <div class="gallery-caption">Temporada</div>
+    </div>
+    <div class="gallery-item" data-category="tradicional" tabindex="0" aria-label="Churros rellenos sin azucar">
+      <img src="img/churros_rellenos.jpg" alt="Churros rellenos" />
+      <div class="gallery-caption">Tradicional</div>
+    </div>
+    <div class="gallery-item" data-category="especial" tabindex="0" aria-label="Churros con salsa de chocolate">
+      <img src="img/churros.jpeg" alt="Churros con salsa de chocolate" />
+      <div class="gallery-caption">Especial</div>
+    </div>
+    <div class="gallery-item" data-category="temporada" tabindex="0" aria-label="Churros especiales">
+      <img src="img/churros_especiales.jpeg" alt="Churros especiales" />
+      <div class="gallery-caption">Temporada</div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal para imagen ampliada -->
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-desc" tabindex="-1">
+  <div class="modal-content">
+    <button class="modal-close" aria-label="Cerrar galería">&times;</button>
+    <img src="" alt="" />
+    <div id="modal-desc" class="modal-caption"></div>
+    <div class="modal-nav">
+      <button class="modal-prev" aria-label="Imagen anterior">&#10094;</button>
+      <button class="modal-next" aria-label="Siguiente imagen">&#10095;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Navbar toggle para móvil
+  const hamburger = document.querySelector('.hamburger');
+  const navMenu = document.querySelector('nav ul');
+
+  hamburger.addEventListener('click', () => {
+    navMenu.classList.toggle('open');
+  });
+  hamburger.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      navMenu.classList.toggle('open');
+    }
+  });
+
+  // Filtros de galería
+  const filterButtons = document.querySelectorAll('.filter-btn');
+  const galleryItems = document.querySelectorAll('.gallery-item');
+
+  filterButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const filter = button.getAttribute('data-filter');
+
+      // Actualizar aria-pressed y clases active
+      filterButtons.forEach(btn => {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
+      });
+      button.classList.add('active');
+      button.setAttribute('aria-pressed', 'true');
+
+      galleryItems.forEach(item => {
+        if(filter === 'all' || item.dataset.category === filter) {
+          item.style.display = 'block';
+          item.setAttribute('tabindex', '0');
+        } else {
+          item.style.display = 'none';
+          item.setAttribute('tabindex', '-1');
+        }
+      });
+    });
+  });
+
+  // Modal
+  const modal = document.querySelector('.modal');
+  const modalImg = modal.querySelector('img');
+  const modalCaption = modal.querySelector('.modal-caption');
+  const modalCloseBtn = modal.querySelector('.modal-close');
+  const modalPrevBtn = modal.querySelector('.modal-prev');
+  const modalNextBtn = modal.querySelector('.modal-next');
+  let currentIndex = -1;
+
+  // Abrir modal al click o tecla Enter/Space en item
+  galleryItems.forEach((item, index) => {
+    item.addEventListener('click', () => openModal(index));
+    item.addEventListener('keydown', e => {
+      if(e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openModal(index);
+      }
+    });
+  });
+
+  function openModal(index) {
+    currentIndex = index;
+    updateModal();
+    modal.classList.add('open');
+    modal.focus();
+    document.body.style.overflow = 'hidden'; // evitar scroll fondo
+  }
+
+  function closeModal() {
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function updateModal() {
+    const item = galleryItems[currentIndex];
+    const img = item.querySelector('img');
+    modalImg.src = img.src;
+    modalImg.alt = img.alt;
+    modalCaption.textContent = img.alt;
+  }
+
+  modalCloseBtn.addEventListener('click', closeModal);
+
+  // Navegación dentro del modal
+  modalPrevBtn.addEventListener('click', () => {
+    currentIndex = (currentIndex === 0) ? galleryItems.length - 1 : currentIndex - 1;
+    updateModal();
+  });
+  modalNextBtn.addEventListener('click', () => {
+    currentIndex = (currentIndex === galleryItems.length - 1) ? 0 : currentIndex + 1;
+    updateModal();
+  });
+
+  // Cerrar modal con Escape
+  window.addEventListener('keydown', e => {
+    if(e.key === 'Escape' && modal.classList.contains('open')) {
+      closeModal();
+    }
+  });
+
+  // Cerrar modal si clic fuera del contenido
+  modal.addEventListener('click', e => {
+    if(e.target === modal) closeModal();
+  });
+
+</script>
+
+</body>
+</html>
