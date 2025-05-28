@@ -118,24 +118,42 @@
     </form>
   </div>
 
-  <script>
-    document.getElementById("registerForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
+  <script type="module">
+  // Asegúrate de tener ya importado Firebase
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
-      if (!username || !password) return alert("Completa todos los campos.");
+  const firebaseConfig = {
+    apiKey: "AIzaSyCohqbsOhJq8xhPzbLGvJCHzTnWIu0mQDk",
+    authDomain: "churros-levi.firebaseapp.com",
+    projectId: "churros-levi",
+    storageBucket: "churros-levi.firebasestorage.app",
+    messagingSenderId: "509825412186",
+    appId: "1:509825412186:web:7c665e2d44ab916d277c63"
+  };
 
-      const admins = JSON.parse(localStorage.getItem("adminsChurrosLevi")) || [];
-      if (admins.some(a => a.username === username)) {
-        return alert("Ese usuario ya está registrado.");
-      }
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
 
-      admins.push({ username, password });
-      localStorage.setItem("adminsChurrosLevi", JSON.stringify(admins));
+  document.getElementById("registerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if (!email || !password) {
+      return alert("Completa todos los campos.");
+    }
+
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
       alert("¡Administrador registrado!");
       window.location.href = "login.html";
-    });
-  </script>
+    } catch (error) {
+      console.error(error);
+      alert("Error al registrar: " + error.message);
+    }
+  });
+</script>
 </body>
 </html>
