@@ -2,6 +2,8 @@
 <html lang="es">
 <head>
   <script src="https://checkout.epayco.co/checkout.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="shortcut icon" href="img/churros_levi.ico" type="image/x-icon" />
@@ -442,8 +444,22 @@
   </div>
 </div>
 
-<script>
-  const productosKey = "productosChurrosLevi";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+  import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCohqbsOhJq8xhPzbLGvJCHzTnWIu0mQDk",
+    authDomain: "churros-levi.firebaseapp.com",
+    projectId: "churros-levi",
+    storageBucket: "churros-levi.firebasestorage.app",
+    messagingSenderId: "509825412186",
+    appId: "1:509825412186:web:c3123fe6aaff476e277c63"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
   const carrito = [];
   const contenedorProductos = document.getElementById("productosMenu");
   const contenedorCategorias = document.getElementById("categoriasFiltro");
@@ -459,23 +475,6 @@
   const formEnvio = document.getElementById('formEnvio');
   const cancelarBtn = document.getElementById('cancelarEnvio');
 
-  // --- INICIO: Gestión carrito + actualización contador en localStorage ---
-
-  // Carga carrito desde localStorage (si existe)
-  function cargarCarrito() {
-    const almacenado = JSON.parse(localStorage.getItem("carritoChurrosLevi"));
-    if (Array.isArray(almacenado)) {
-      carrito.length = 0;
-      almacenado.forEach(item => carrito.push(item));
-    }
-  }
-
-  // Guarda carrito actualizado en localStorage
-  function guardarCarrito() {
-    localStorage.setItem("carritoChurrosLevi", JSON.stringify(carrito));
-  }
-
-  // Actualiza el contenido del carrito y el contador visual
   function actualizarCarrito() {
     carritoItems.innerHTML = "";
     let total = 0;
@@ -499,11 +498,8 @@
     contadorCarrito.textContent = carrito.reduce((acc, p) => acc + p.cantidad, 0);
     contadorCarrito.style.display = carrito.length > 0 ? "block" : "none";
     totalCarrito.textContent = `Total: $${total.toLocaleString()}`;
-
-    guardarCarrito();
   }
 
-  // Cambia cantidad de un producto en el carrito
   function cambiarCantidad(id, delta) {
     const item = carrito.find(p => p.id === id);
     if (!item) return;
@@ -515,49 +511,21 @@
     actualizarCarrito();
   }
 
-  // Agrega producto al carrito (desde el listado)
-  function agregarAlCarrito(id) {
-    const productos = JSON.parse(localStorage.getItem(productosKey)) || [];
-    const producto = productos.find(p => p.id === id);
+  async function agregarAlCarrito(id) {
+    const snapshot = await getDocs(collection(db, "productos"));
+    const producto = snapshot.docs.map(doc => doc.data()).find(p => p.id === id);
     if (!producto) return;
 
     const item = carrito.find(p => p.id === id);
     if (item) {
       item.cantidad += 1;
     } else {
-      carrito.push({...producto, cantidad: 1});
+      carrito.push({ ...producto, cantidad: 1 });
     }
     actualizarCarrito();
   }
 
-  // --- FIN: Gestión carrito + actualización contador en localStorage ---
-
-  document.addEventListener('DOMContentLoaded', () => {
-    // Cargar productos
-    const productos = JSON.parse(localStorage.getItem(productosKey)) || [];
-    if (productos.length === 0) {
-      contenedorProductos.innerHTML = "<p>No hay productos disponibles por ahora.</p>";
-      return;
-    }
-
-    // Cargar carrito desde localStorage
-    cargarCarrito();
-    actualizarCarrito();
-
-    // Crear filtro categorías
-    const categorias = ["Todos", ...new Set(productos.map(p => p.categoria))];
-    categorias.forEach(cat => {
-      const btn = document.createElement("button");
-      btn.textContent = cat;
-      btn.className = "btn-categoria";
-      btn.onclick = () => filtrarPorCategoria(cat);
-      contenedorCategorias.appendChild(btn);
-    });
-
-    mostrarProductos(productos);
-  });
-
-  function mostrarProductos(lista) {
+  async function mostrarProductos(lista) {
     contenedorProductos.innerHTML = "";
     lista.forEach(producto => {
       const div = document.createElement("div");
@@ -573,8 +541,10 @@
     });
   }
 
-  function filtrarPorCategoria(categoria) {
-    const productos = JSON.parse(localStorage.getItem(productosKey)) || [];
+  async function filtrarPorCategoria(categoria) {
+    const snapshot = await getDocs(collection(db, "productos"));
+    const productos = snapshot.docs.map(doc => doc.data());
+
     document.querySelectorAll(".btn-categoria").forEach(btn => btn.classList.remove("active"));
     const btn = [...document.querySelectorAll(".btn-categoria")].find(b => b.textContent === categoria);
     if (btn) btn.classList.add("active");
@@ -583,11 +553,31 @@
     mostrarProductos(filtrados);
   }
 
+  document.addEventListener('DOMContentLoaded', async () => {
+    const snapshot = await getDocs(collection(db, "productos"));
+    const productos = snapshot.docs.map(doc => doc.data());
+
+    if (productos.length === 0) {
+      contenedorProductos.innerHTML = "<p>No hay productos disponibles por ahora.</p>";
+      return;
+    }
+
+    const categorias = ["Todos", ...new Set(productos.map(p => p.categoria))];
+    categorias.forEach(cat => {
+      const btn = document.createElement("button");
+      btn.textContent = cat;
+      btn.className = "btn-categoria";
+      btn.onclick = () => filtrarPorCategoria(cat);
+      contenedorCategorias.appendChild(btn);
+    });
+
+    mostrarProductos(productos);
+  });
+
   iconoCarrito.addEventListener("click", () => modal.classList.add("active"));
   cerrarBtn.addEventListener("click", () => modal.classList.remove("active"));
 
-  // Guardar pedido y abrir formulario modal para datos envío
-  function guardarPedidoEnLocalStorage() {
+  function guardarPedidoEnFirestore() {
     if (carrito.length === 0) return alert("El carrito está vacío");
 
     const nombreCliente = prompt("Por favor ingresa tu nombre:");
@@ -600,7 +590,7 @@
     modalForm.classList.add("active");
   }
 
-  formEnvio.onsubmit = function(e) {
+  formEnvio.onsubmit = async function(e) {
     e.preventDefault();
 
     const direccion = document.getElementById('direccionEnvio').value.trim();
@@ -612,10 +602,7 @@
       return;
     }
 
-    let pedidos = JSON.parse(localStorage.getItem("pedidosChurrosLevi")) || [];
-
     const nuevoPedido = {
-      id: pedidos.length + 101,
       nombreCliente: window._nombreCliente,
       fecha: new Date().toISOString().split("T")[0],
       productos: carrito.map(p => ({
@@ -631,8 +618,7 @@
       pagado: false
     };
 
-    pedidos.push(nuevoPedido);
-    localStorage.setItem("pedidosChurrosLevi", JSON.stringify(pedidos));
+    const docRef = await addDoc(collection(db, "pedidos"), nuevoPedido);
 
     carrito.length = 0;
     actualizarCarrito();
@@ -642,23 +628,22 @@
 
     alert(`¡Gracias por tu compra, ${window._nombreCliente}! Ahora te redireccionaremos al pago.`);
 
-    iniciarPagoConEPayco(nuevoPedido);
+    iniciarPagoConEPayco({ ...nuevoPedido, id: docRef.id });
   };
 
-  cancelarBtn.onclick = function() {
+  cancelarBtn.onclick = () => {
     modalForm.classList.remove("active");
     formEnvio.reset();
   };
 
-  btnPagar.onclick = guardarPedidoEnLocalStorage;
+  btnPagar.onclick = guardarPedidoEnFirestore;
 
-  // Integración con ePayco
   function iniciarPagoConEPayco(pedido) {
     const totalCOP = pedido.total;
 
     const handler = ePayco.checkout.configure({
-      key: "5cee31c5d509dafe05d2c25f73377a2d", // Cambia por tu public key real
-      test: false // Cambia a false para producción
+      key: "5cee31c5d509dafe05d2c25f73377a2d",
+      test: false
     });
 
     handler.open({
@@ -675,15 +660,15 @@
       extra1: pedido.nombreCliente,
       extra2: pedido.direccionEnvio,
       extra3: pedido.telefonoContacto,
-      response: "respuesta.html", // Cambia estas URLs
+      response: "respuesta.html",
       confirmation: "https://tu-sitio.com/api-confirmacion",
     });
   }
 
-  // Hacer accesible la función cambiarCantidad para botones inline
   window.cambiarCantidad = cambiarCantidad;
   window.agregarAlCarrito = agregarAlCarrito;
 </script>
+
 
 
 
