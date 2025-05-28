@@ -446,7 +446,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-  import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCohqbsOhJq8xhPzbLGvJCHzTnWIu0mQDk",
@@ -461,6 +461,8 @@
   const db = getFirestore(app);
 
   const carrito = [];
+  let productosCache = [];
+
   const contenedorProductos = document.getElementById("productosMenu");
   const contenedorCategorias = document.getElementById("categoriasFiltro");
   const modal = document.getElementById("modalCarrito");
@@ -485,9 +487,9 @@
       item.innerHTML = `
         <span class="nombre">${p.nombre}</span>
         <div class="controles">
-          <button onclick="cambiarCantidad(${p.id}, -1)">-</button>
+          <button onclick="cambiarCantidad('${p.id}', -1)">-</button>
           <span class="cantidad">${p.cantidad}</span>
-          <button onclick="cambiarCantidad(${p.id}, 1)">+</button>
+          <button onclick="cambiarCantidad('${p.id}', 1)">+</button>
         </div>
         <span class="precio">$${(p.precio * p.cantidad).toLocaleString()}</span>
       `;
@@ -495,30 +497,33 @@
       total += p.precio * p.cantidad;
     });
 
-    contadorCarrito.textContent = carrito.reduce((acc, p) => acc + p.cantidad, 0);
-    contadorCarrito.style.display = carrito.length > 0 ? "block" : "none";
+    const totalCantidad = carrito.reduce((acc, p) => acc + p.cantidad, 0);
+    contadorCarrito.textContent = totalCantidad;
+    contadorCarrito.style.display = totalCantidad > 0 ? "block" : "none";
     totalCarrito.textContent = `Total: $${total.toLocaleString()}`;
   }
 
   function cambiarCantidad(id, delta) {
-    const item = carrito.find(p => p.id === id);
+    const item = carrito.find(p => p.id.toString() === id.toString());
     if (!item) return;
     item.cantidad += delta;
     if (item.cantidad <= 0) {
-      const i = carrito.indexOf(item);
-      carrito.splice(i, 1);
+      const index = carrito.indexOf(item);
+      carrito.splice(index, 1);
     }
     actualizarCarrito();
   }
 
-  async function agregarAlCarrito(id) {
-    const snapshot = await getDocs(collection(db, "productos"));
-    const producto = snapshot.docs.map(doc => doc.data()).find(p => p.id === id);
-    if (!producto) return;
-
-    const item = carrito.find(p => p.id === id);
+  function agregarAlCarrito(id) {
+    // Buscar producto en caché
+    const producto = productosCache.find(p => p.id.toString() === id.toString());
+    if (!producto) {
+      alert("Producto no encontrado.");
+      return;
+    }
+    const item = carrito.find(p => p.id.toString() === id.toString());
     if (item) {
-      item.cantidad += 1;
+      item.cantidad++;
     } else {
       carrito.push({ ...producto, cantidad: 1 });
     }
@@ -535,34 +540,36 @@
         <h3>${producto.nombre}</h3>
         <p>${producto.descripcion}</p>
         <div class="precio">$${producto.precio.toLocaleString()}</div>
-        <button class="btn-agregar" onclick="agregarAlCarrito(${producto.id})">Agregar</button>
+        <button class="btn-agregar" onclick="agregarAlCarrito('${producto.id}')">Agregar</button>
       `;
       contenedorProductos.appendChild(div);
     });
   }
 
   async function filtrarPorCategoria(categoria) {
-    const snapshot = await getDocs(collection(db, "productos"));
-    const productos = snapshot.docs.map(doc => doc.data());
-
+    if (!productosCache.length) return;
     document.querySelectorAll(".btn-categoria").forEach(btn => btn.classList.remove("active"));
     const btn = [...document.querySelectorAll(".btn-categoria")].find(b => b.textContent === categoria);
     if (btn) btn.classList.add("active");
 
-    const filtrados = categoria === "Todos" ? productos : productos.filter(p => p.categoria === categoria);
+    const filtrados = categoria === "Todos" ? productosCache : productosCache.filter(p => p.categoria === categoria);
     mostrarProductos(filtrados);
   }
 
   document.addEventListener('DOMContentLoaded', async () => {
     const snapshot = await getDocs(collection(db, "productos"));
-    const productos = snapshot.docs.map(doc => doc.data());
+    productosCache = snapshot.docs.map(doc => {
+      const data = doc.data();
+      data.id = data.id ?? doc.id; // Asegurar que tenga id
+      return data;
+    });
 
-    if (productos.length === 0) {
+    if (productosCache.length === 0) {
       contenedorProductos.innerHTML = "<p>No hay productos disponibles por ahora.</p>";
       return;
     }
 
-    const categorias = ["Todos", ...new Set(productos.map(p => p.categoria))];
+    const categorias = ["Todos", ...new Set(productosCache.map(p => p.categoria))];
     categorias.forEach(cat => {
       const btn = document.createElement("button");
       btn.textContent = cat;
@@ -571,7 +578,7 @@
       contenedorCategorias.appendChild(btn);
     });
 
-    mostrarProductos(productos);
+    mostrarProductos(productosCache);
   });
 
   iconoCarrito.addEventListener("click", () => modal.classList.add("active"));
@@ -618,17 +625,22 @@
       pagado: false
     };
 
-    const docRef = await addDoc(collection(db, "pedidos"), nuevoPedido);
+    try {
+      const docRef = await addDoc(collection(db, "pedidos"), nuevoPedido);
 
-    carrito.length = 0;
-    actualizarCarrito();
-    modal.classList.remove("active");
-    modalForm.classList.remove("active");
-    formEnvio.reset();
+      carrito.length = 0;
+      actualizarCarrito();
+      modal.classList.remove("active");
+      modalForm.classList.remove("active");
+      formEnvio.reset();
 
-    alert(`¡Gracias por tu compra, ${window._nombreCliente}! Ahora te redireccionaremos al pago.`);
+      alert(`¡Gracias por tu compra, ${window._nombreCliente}! Ahora te redireccionaremos al pago.`);
 
-    iniciarPagoConEPayco({ ...nuevoPedido, id: docRef.id });
+      iniciarPagoConEPayco({ ...nuevoPedido, id: docRef.id });
+    } catch (error) {
+      console.error("Error guardando pedido:", error);
+      alert("Ocurrió un error al guardar tu pedido. Intenta nuevamente.");
+    }
   };
 
   cancelarBtn.onclick = () => {
@@ -641,7 +653,7 @@
   function iniciarPagoConEPayco(pedido) {
     const totalCOP = pedido.total;
 
-    const handler = ePayco.checkout.configure({
+    const handler = window.ePayco.checkout.configure({
       key: "5cee31c5d509dafe05d2c25f73377a2d",
       test: false
     });
@@ -660,17 +672,13 @@
       extra1: pedido.nombreCliente,
       extra2: pedido.direccionEnvio,
       extra3: pedido.telefonoContacto,
-      response: "respuesta.html",
-      confirmation: "https://tu-sitio.com/api-confirmacion",
+      response: "respuesta.html",           // página donde se envía respuesta POST o GET
+      confirmation: "https://tu-sitio.com/api-confirmacion" // webhook confirmación
     });
   }
 
   window.cambiarCantidad = cambiarCantidad;
   window.agregarAlCarrito = agregarAlCarrito;
 </script>
-
-
-
-
 </body>
 </html>
