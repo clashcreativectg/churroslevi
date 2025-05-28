@@ -436,307 +436,237 @@ form button:hover {
     </section>
   </main>
 
+<!-- Importa Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
 <script>
+  // --- CONFIGURACIÓN FIREBASE ---
+  const firebaseConfig = {
+    apiKey: "AIzaSyCohqbsOhJq8xhPzbLGvJCHzTnWIu0mQDk",
+    authDomain: "churros-levi.firebaseapp.com",
+    projectId: "churros-levi",
+    storageBucket: "churros-levi.firebasestorage.app",
+    messagingSenderId: "509825412186",
+    appId: "1:509825412186:web:7c665e2d44ab916d277c63"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-  const adminLogueado = localStorage.getItem("adminLogueadoChurrosLevi");
-  if (!adminLogueado) {
-    alert("Debes iniciar sesión para acceder al panel.");
-    window.location.href = "login.html";
-  }
-
-  // --- CLAVES LOCALSTORAGE ---
-  const productosKey = "productosChurrosLevi";
-  const promocionesKey = "promocionesChurrosLevi";
-  const pedidosKey = "pedidosChurrosLevi";
-
-  // --- NAVEGACIÓN DE SECCIONES ---
-  document.addEventListener("DOMContentLoaded", () => {
-    const links = document.querySelectorAll("nav.sidebar a");
-    const sections = document.querySelectorAll("main.content section");
-
-    links.forEach((link) => {
-      link.addEventListener("click", (e) => {
-        e.preventDefault();
-        const target = link.dataset.section;
-        links.forEach((l) => l.classList.remove("active"));
-        link.classList.add("active");
-        sections.forEach((sec) => {
-          sec.classList.toggle("active", sec.id === target);
-        });
-      });
-    });
-
-    renderProductos();
-    renderPromociones();
-    renderPedidos();
+  // --- VERIFICAR SESIÓN DE ADMIN ---
+  auth.onAuthStateChanged(user => {
+    if (!user) {
+      alert("Debes iniciar sesión para acceder al panel.");
+      window.location.href = "login.html";
+    } else {
+      initDashboard();
+    }
   });
 
-  // --- PRODUCTOS ---
-  let productos = JSON.parse(localStorage.getItem(productosKey)) || [];
+  // --- DASHBOARD COMPLETO ---
+  function initDashboard() {
+    const productosRef = db.collection("productos");
+    const promocionesRef = db.collection("promociones");
+    const pedidosRef = db.collection("pedidos");
 
-  function guardarProductos() {
-    localStorage.setItem(productosKey, JSON.stringify(productos));
-  }
-
-  function renderProductos() {
-    const tbody = document.querySelector("#productosTable tbody");
-    tbody.innerHTML = "";
-    productos.forEach((p) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-      <td>${p.nombre}</td>
-      <td>${p.descripcion}</td>
-      <td>${p.categoria}</td>
-      <td>$${p.precio.toLocaleString()}</td>
-      <td><img src="${p.imagen}" alt="${p.nombre}" width="50" /></td>
-      <td>
-        <button class="btn btn-edit" data-id="${p.id}">Editar</button>
-        <button class="btn btn-delete" data-id="${p.id}">Eliminar</button>
-      </td>
-    `;
-      tbody.appendChild(tr);
+    // Navegación entre secciones
+    document.querySelectorAll("nav.sidebar a").forEach(link => {
+      link.addEventListener("click", e => {
+        e.preventDefault();
+        const target = link.dataset.section;
+        document.querySelectorAll("nav.sidebar a").forEach(l => l.classList.remove("active"));
+        document.querySelectorAll("main.content section").forEach(sec =>
+          sec.classList.toggle("active", sec.id === target)
+        );
+        link.classList.add("active");
+      });
     });
 
-    document.querySelectorAll(".btn-edit").forEach((btn) => {
-      btn.onclick = (e) => editarProducto(+e.target.dataset.id);
-    });
+    // ---------------- PRODUCTOS ----------------
+    async function renderProductos() {
+      const snapshot = await productosRef.get();
+      const tbody = document.querySelector("#productosTable tbody");
+      tbody.innerHTML = "";
+      snapshot.forEach(doc => {
+        const p = doc.data();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${p.nombre}</td>
+          <td>${p.descripcion}</td>
+          <td>${p.categoria}</td>
+          <td>$${p.precio.toLocaleString()}</td>
+          <td><img src="${p.imagen}" width="50" /></td>
+          <td>
+            <button class="btn btn-edit" data-id="${doc.id}">Editar</button>
+            <button class="btn btn-delete" data-id="${doc.id}">Eliminar</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
 
-    document.querySelectorAll(".btn-delete").forEach((btn) => {
-      btn.onclick = (e) => eliminarProducto(+e.target.dataset.id);
-    });
-  }
+      document.querySelectorAll(".btn-edit").forEach(btn => {
+        btn.onclick = () => editarProducto(btn.dataset.id);
+      });
 
-  function editarProducto(id) {
-    const producto = productos.find((p) => p.id === id);
-    if (!producto) return alert("Producto no encontrado");
-
-    document.getElementById("nombre").value = producto.nombre;
-    document.getElementById("descripcion").value = producto.descripcion;
-    document.getElementById("categoria").value = producto.categoria;
-    document.getElementById("precio").value = producto.precio;
-    alert("Para cambiar la imagen, seleccione un archivo nuevo.");
-
-    const form = document.getElementById("addProductForm");
-    form.dataset.editingId = id;
-    form.querySelector("button[type='submit']").textContent = "Actualizar Producto";
-  }
-
-  function eliminarProducto(id) {
-    if (!confirm("¿Seguro que quieres eliminar este producto?")) return;
-    productos = productos.filter((p) => p.id !== id);
-    guardarProductos();
-    renderProductos();
-  }
-
-  document.getElementById("addProductForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const nombre = document.getElementById("nombre").value.trim();
-    const descripcion = document.getElementById("descripcion").value.trim();
-    const categoria = document.getElementById("categoria").value;
-    const precio = +document.getElementById("precio").value;
-    const inputImagen = document.getElementById("imagen");
-    const imagenFile = inputImagen.files[0];
-
-    if (!nombre || !categoria || !precio) {
-      alert("Por favor, completa todos los campos obligatorios");
-      return;
-    }
-
-    const form = e.target;
-    const editingId = form.dataset.editingId;
-
-    async function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (error) => reject(error);
-        reader.readAsDataURL(file);
+      document.querySelectorAll(".btn-delete").forEach(btn => {
+        btn.onclick = async () => {
+          if (confirm("¿Eliminar producto?")) {
+            await productosRef.doc(btn.dataset.id).delete();
+            renderProductos();
+          }
+        };
       });
     }
 
-    async function guardar() {
-      let imagenData = "img/default.png";
-      if (imagenFile) {
-        if (!imagenFile.type.startsWith("image/")) {
-          alert("Solo se permiten archivos de imagen.");
-          return;
-        }
-        if (imagenFile.size > 2 * 1024 * 1024) {
-          alert("La imagen es muy grande. Máximo permitido: 2MB.");
-          return;
-        }
-        imagenData = await fileToBase64(imagenFile);
+    async function editarProducto(id) {
+      const doc = await productosRef.doc(id).get();
+      if (!doc.exists) return alert("Producto no encontrado");
+      const p = doc.data();
+      document.getElementById("nombre").value = p.nombre;
+      document.getElementById("descripcion").value = p.descripcion;
+      document.getElementById("categoria").value = p.categoria;
+      document.getElementById("precio").value = p.precio;
+      alert("Para cambiar la imagen, seleccione un archivo nuevo.");
+      const form = document.getElementById("addProductForm");
+      form.dataset.editingId = id;
+      form.querySelector("button[type='submit']").textContent = "Actualizar Producto";
+    }
+
+    document.getElementById("addProductForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const form = e.target;
+      const nombre = document.getElementById("nombre").value.trim();
+      const descripcion = document.getElementById("descripcion").value.trim();
+      const categoria = document.getElementById("categoria").value;
+      const precio = parseFloat(document.getElementById("precio").value);
+      const imagenFile = document.getElementById("imagen").files[0];
+      if (!nombre || !categoria || isNaN(precio)) {
+        alert("Completa los campos correctamente.");
+        return;
       }
 
+      let imagenData = "img/default.png";
+      if (imagenFile) {
+        if (!imagenFile.type.startsWith("image/") || imagenFile.size > 2 * 1024 * 1024) {
+          alert("Imagen inválida (formato o tamaño).");
+          return;
+        }
+        imagenData = await new Promise((res, rej) => {
+          const reader = new FileReader();
+          reader.onload = () => res(reader.result);
+          reader.onerror = () => rej();
+          reader.readAsDataURL(imagenFile);
+        });
+      }
+
+      const editingId = form.dataset.editingId;
       if (editingId) {
-        const idx = productos.findIndex((p) => p.id === +editingId);
-        if (idx < 0) return alert("Producto no encontrado");
-
-        productos[idx] = {
-          ...productos[idx],
-          nombre,
-          descripcion,
-          categoria,
-          precio,
-          ...(imagenFile && { imagen: imagenData }),
-        };
-
-        alert("Producto actualizado correctamente");
+        const updateData = { nombre, descripcion, categoria, precio };
+        if (imagenFile) updateData.imagen = imagenData;
+        await productosRef.doc(editingId).update(updateData);
         delete form.dataset.editingId;
         form.querySelector("button[type='submit']").textContent = "Agregar Producto";
+        alert("Producto actualizado");
       } else {
-        const nuevoProducto = {
-          id: productos.length ? productos[productos.length - 1].id + 1 : 1,
-          nombre,
-          descripcion,
-          categoria,
-          precio,
-          imagen: imagenData,
-        };
-        productos.push(nuevoProducto);
-        alert("Producto agregado correctamente");
+        await productosRef.add({ nombre, descripcion, categoria, precio, imagen: imagenData });
+        alert("Producto agregado");
       }
 
       form.reset();
-      guardarProductos();
       renderProductos();
-    }
-
-    guardar().catch((err) => alert("Error al procesar la imagen"));
-  });
-
-  // --- PEDIDOS ---
-  function cargarPedidos() {
-    return JSON.parse(localStorage.getItem(pedidosKey)) || [];
-  }
-
-  function renderPedidos() {
-    const pedidos = cargarPedidos();
-    const cont = document.getElementById("pedidosContainer");
-    cont.innerHTML = pedidos.length === 0 ? "<p>No hay pedidos aún.</p>" : "";
-
-    pedidos.forEach((pedido) => {
-      const div = document.createElement("div");
-      div.className = "pedido";
-      div.innerHTML = `
-      <div class="pedido-header">
-        <div><strong>Pedido #${pedido.id}</strong> - ${pedido.nombreCliente}</div>
-        <div><strong>Total:</strong> $${pedido.total.toLocaleString()}</div>
-        <div><strong>Fecha:</strong> ${pedido.fecha}</div>
-      </div>
-      <ul class="pedido-items">
-        ${pedido.productos
-          .map((prod) => `<li>${prod.cantidad} × ${prod.nombre}</li>`)
-          .join("")}
-      </ul>
-    `;
-      cont.appendChild(div);
     });
-  }
 
-  // --- PROMOCIONES ---
-  function cargarPromociones() {
-    const promosStr = localStorage.getItem(promocionesKey);
-    return promosStr ? JSON.parse(promosStr) : [];
-  }
-
-  function guardarPromociones(promos) {
-    localStorage.setItem(promocionesKey, JSON.stringify(promos));
-  }
-
-  function renderPromociones() {
-    const promociones = cargarPromociones();
-    const ul = document.querySelector("#promocionesList ul");
-    ul.innerHTML = "";
-
-    if (promociones.length === 0) {
-      ul.innerHTML = "<li>No hay promociones agregadas.</li>";
-      return;
-    }
-
-    promociones.forEach((promo, i) => {
-      const li = document.createElement("li");
-      li.innerHTML = `
-      <img src="${promo.imagen}" alt="${promo.nombre}" width="40" style="margin-right: 10px; vertical-align: middle;" />
-      ${promo.nombre || promo.titulo}: $${promo.precio.toFixed(2)}
-    `;
-      const btnDel = document.createElement("button");
-      btnDel.textContent = "Eliminar";
-      btnDel.className = "btn btn-delete";
-      btnDel.onclick = () => {
-        if (confirm(`¿Eliminar promoción "${promo.nombre || promo.titulo}"?`)) {
-          promociones.splice(i, 1);
-          guardarPromociones(promociones);
-          renderPromociones();
-        }
-      };
-      li.appendChild(btnDel);
-      ul.appendChild(li);
-    });
-  }
-
-  document.getElementById("addPromotionForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const nombre = document.getElementById("promoNombre").value.trim();
-    const precioStr = document.getElementById("promoPrecio").value.trim();
-    const imagenFile = document.getElementById("promoImagen").files[0];
-
-    if (!nombre) {
-      alert("Debe ingresar el nombre de la promoción.");
-      return;
-    }
-
-    const precio = parseFloat(precioStr);
-    if (isNaN(precio) || precio < 0) {
-      alert("Debe ingresar un precio válido (número positivo).");
-      return;
-    }
-
-    let imagenData = "img/default_promo.png";
-    if (imagenFile) {
-      if (!imagenFile.type.startsWith("image/")) {
-        alert("Solo se permiten archivos de imagen.");
+    // ---------------- PROMOCIONES ----------------
+    async function renderPromociones() {
+      const ul = document.querySelector("#promocionesList ul");
+      const snapshot = await promocionesRef.get();
+      ul.innerHTML = "";
+      if (snapshot.empty) {
+        ul.innerHTML = "<li>No hay promociones.</li>";
         return;
       }
-      if (imagenFile.size > 2 * 1024 * 1024) {
-        alert("La imagen es muy grande. Máximo permitido: 2MB.");
-        return;
-      }
-      imagenData = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (error) => reject(error);
-        reader.readAsDataURL(imagenFile);
+
+      snapshot.forEach(doc => {
+        const p = doc.data();
+        const li = document.createElement("li");
+        li.innerHTML = `<img src="${p.imagen}" width="40" style="margin-right: 10px;" />
+          ${p.nombre || p.titulo}: $${p.precio.toFixed(2)}`;
+        const btn = document.createElement("button");
+        btn.textContent = "Eliminar";
+        btn.className = "btn btn-delete";
+        btn.onclick = async () => {
+          if (confirm(`¿Eliminar promoción "${p.nombre}"?`)) {
+            await promocionesRef.doc(doc.id).delete();
+            renderPromociones();
+          }
+        };
+        li.appendChild(btn);
+        ul.appendChild(li);
       });
     }
 
-    const promociones = cargarPromociones();
+    document.getElementById("addPromotionForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const nombre = document.getElementById("promoNombre").value.trim();
+      const precio = parseFloat(document.getElementById("promoPrecio").value.trim());
+      const imagenFile = document.getElementById("promoImagen").files[0];
+      if (!nombre || isNaN(precio)) return alert("Completa los datos correctamente.");
 
-    if (promociones.length >= 10) {
-      alert("Máximo 10 promociones permitidas.");
-      return;
-    }
+      let imagenData = "img/default_promo.png";
+      if (imagenFile) {
+        if (!imagenFile.type.startsWith("image/") || imagenFile.size > 2 * 1024 * 1024) {
+          alert("Imagen inválida.");
+          return;
+        }
+        imagenData = await new Promise((res, rej) => {
+          const reader = new FileReader();
+          reader.onload = () => res(reader.result);
+          reader.onerror = () => rej();
+          reader.readAsDataURL(imagenFile);
+        });
+      }
 
-    promociones.push({
-      id: `promo_${Date.now()}`,
-      titulo: nombre,
-      nombre,
-      precio,
-      imagen: imagenData,
-      precioOriginal: 0,
-      descuento: "",
-      estrellas: 0,
-      fecha: new Date().toLocaleString(),
+      await promocionesRef.add({
+        nombre,
+        precio,
+        imagen: imagenData,
+        fecha: new Date().toISOString(),
+      });
+
+      e.target.reset();
+      renderPromociones();
     });
 
-    guardarPromociones(promociones);
+    // ---------------- PEDIDOS ----------------
+    async function renderPedidos() {
+      const cont = document.getElementById("pedidosContainer");
+      const snapshot = await pedidosRef.orderBy("fecha", "desc").get();
+      cont.innerHTML = snapshot.empty ? "<p>No hay pedidos aún.</p>" : "";
+      snapshot.forEach(doc => {
+        const p = doc.data();
+        const div = document.createElement("div");
+        div.className = "pedido";
+        div.innerHTML = `
+          <div class="pedido-header">
+            <div><strong>Pedido #${doc.id}</strong> - ${p.nombreCliente}</div>
+            <div><strong>Total:</strong> $${p.total.toLocaleString()}</div>
+            <div><strong>Fecha:</strong> ${new Date(p.fecha).toLocaleString()}</div>
+          </div>
+          <ul class="pedido-items">
+            ${p.productos.map(prod => `<li>${prod.cantidad} × ${prod.nombre}</li>`).join("")}
+          </ul>`;
+        cont.appendChild(div);
+      });
+    }
+
+    // Inicialización de todas las secciones
+    renderProductos();
     renderPromociones();
-    e.target.reset();
-  });
+    renderPedidos();
+  }
 
   function logout() {
-  localStorage.removeItem("adminLogueadoChurrosLevi");
-  window.location.href = "login.html";
-}
-
+    auth.signOut().then(() => window.location.href = "login.html");
+  }
 </script>
