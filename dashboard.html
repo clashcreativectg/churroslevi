@@ -444,13 +444,13 @@ form button:hover {
 <script>
   // --- CONFIGURACIÓN FIREBASE ---
   const firebaseConfig = {
-    apiKey: "AIzaSyCohqbsOhJq8xhPzbLGvJCHzTnWIu0mQDk",
-    authDomain: "churros-levi.firebaseapp.com",
-    projectId: "churros-levi",
-    storageBucket: "churros-levi.firebasestorage.app",
-    messagingSenderId: "509825412186",
-    appId: "1:509825412186:web:7c665e2d44ab916d277c63"
-  };
+  apiKey: "AIzaSyCohqbsOhJq8xhPzbLGvJCHzTnWIu0mQDk",
+  authDomain: "churros-levi.firebaseapp.com",
+  projectId: "churros-levi",
+  storageBucket: "churros-levi.appspot.com", // ← CORREGIDO
+  messagingSenderId: "509825412186",
+  appId: "1:509825412186:web:7c665e2d44ab916d277c63"
+};
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db = firebase.firestore();
