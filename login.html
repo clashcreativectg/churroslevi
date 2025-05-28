@@ -118,20 +118,53 @@
     </form>
   </div>
 
-  <script>
-    document.getElementById("loginForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
+  <!-- Asegúrate de que este script esté dentro de tu HTML donde está el formulario loginForm -->
+<script type="module">
+  // 1. Importa Firebase
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
-      const admins = JSON.parse(localStorage.getItem("adminsChurrosLevi")) || [];
+  // 2. Configura Firebase (reemplaza con tus datos reales)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCohqbsOhJq8xhPzbLGvJCHzTnWIu0mQDk",
+    authDomain: "churros-levi.firebaseapp.com",
+    projectId: "churros-levi",
+    storageBucket: "churros-levi.firebasestorage.app",
+    messagingSenderId: "509825412186D",
+    appId: "1:509825412186:web:7c665e2d44ab916d277c63"
+  };
+
+  // 3. Inicializa Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // 4. Manejo del login
+  document.getElementById("loginForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    try {
+      const snapshot = await getDocs(collection(db, "admins"));
+      const admins = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
       const admin = admins.find(a => a.username === username && a.password === password);
 
-      if (!admin) return alert("Credenciales inválidas.");
+      if (!admin) {
+        alert("Credenciales inválidas.");
+        return;
+      }
 
+      // Guarda la sesión local para validación en el dashboard
       localStorage.setItem("adminLogueadoChurrosLevi", JSON.stringify(admin));
       window.location.href = "dashboard.html";
-    });
-  </script>
+    } catch (error) {
+      console.error("Error al autenticar con Firebase:", error);
+      alert("Hubo un problema al conectar con el servidor. Intenta de nuevo.");
+    }
+  });
+</script>
+
 </body>
 </html>
