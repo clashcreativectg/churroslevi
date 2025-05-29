@@ -6,6 +6,7 @@
   <link rel="shortcut icon" href="img/churros_levi.ico" type="image/x-icon">
   <title>Iniciar Sesión</title>
   <style>
+    /* --- Tu CSS original --- */
     * {
       box-sizing: border-box;
     }
@@ -94,10 +95,17 @@
       color: #007bff;
       text-decoration: none;
       transition: color 0.3s ease;
+      cursor: pointer;
     }
 
     a:hover {
       color: #0056b3;
+    }
+
+    .forgot-password {
+      margin-top: 10px;
+      text-align: right;
+      font-size: 14px;
     }
 
     @media (max-width: 480px) {
@@ -111,17 +119,17 @@
   <div class="login-container">
     <h1>Iniciar Sesión</h1>
     <form id="loginForm">
-      <input type="text" id="username" placeholder="Usuario" required />
+      <input type="text" id="username" placeholder="Usuario (correo electrónico)" required />
       <input type="password" id="password" placeholder="Contraseña" required />
       <button type="submit">Entrar</button>
       <p><a href="register.html">¿No tienes cuenta? Regístrate</a></p>
+      <p class="forgot-password"><a id="forgotPasswordLink">¿Olvidaste tu contraseña?</a></p>
     </form>
   </div>
 
-<!-- Asegúrate de que este script esté en tu HTML donde está el formulario loginForm -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
+  import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCohqbsOhJq8xhPzbLGvJCHzTnWIu0mQDk",
@@ -139,17 +147,15 @@
   document.getElementById("loginForm").addEventListener("submit", async function(e) {
     e.preventDefault();
 
-    const email = document.getElementById("username").value.trim(); // Usamos campo de username como email
+    const email = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value.trim();
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Guarda sesión en localStorage (si lo necesitas para validar acceso)
       localStorage.setItem("adminLogueadoChurrosLevi", JSON.stringify({ uid: user.uid, email: user.email }));
-      
-      window.location.href = "dashboard.html"; // Redirige al dashboard
+      window.location.href = "dashboard.html";
     } catch (error) {
       if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
         alert("Correo o contraseña incorrectos.");
@@ -158,6 +164,26 @@
       }
     }
   });
+
+  // Restablecer contraseña
+  document.getElementById("forgotPasswordLink").addEventListener("click", async () => {
+    const emailPrompt = prompt("Por favor, ingresa tu correo electrónico para restablecer la contraseña:");
+    if (emailPrompt) {
+      try {
+        await sendPasswordResetEmail(auth, emailPrompt.trim());
+        alert("Se ha enviado un correo para restablecer tu contraseña. Revisa tu bandeja de entrada.");
+      } catch (error) {
+        if (error.code === "auth/user-not-found") {
+          alert("No existe una cuenta registrada con ese correo.");
+        } else if (error.code === "auth/invalid-email") {
+          alert("El correo electrónico ingresado no es válido.");
+        } else {
+          alert("Error al enviar el correo de restablecimiento: " + error.message);
+        }
+      }
+    }
+  });
 </script>
 </body>
 </html>
+
