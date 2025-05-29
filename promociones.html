@@ -6,10 +6,7 @@
   <title>Promociones | Churros Levi</title>
   <link rel="stylesheet" href="css/promociones.css" />
   <link rel="shortcut icon" href="img/churros_levi.ico" type="image/x-icon">
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-  />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
 
@@ -65,7 +62,7 @@
   <!-- PROMOCIONES -->
   <main class="main-content container">
     <h2 class="heading-1">Nuestras Promociones</h2>
-    <div class="container-products">
+    <div class="container-products" id="lista-promociones">
       <!-- Las promociones se insertan dinámicamente aquí desde Firestore -->
     </div>
   </main>
@@ -77,6 +74,79 @@
     </div>
   </footer>
 
-  <script src="js/promociones.js"></script>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <!-- Script de promociones -->
+  <script>
+    // Configuración de Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCohqbsOhJq8xhPzbLGvJCHzTnWIu0mQDk",
+      authDomain: "churros-levi.firebaseapp.com",
+      projectId: "churros-levi",
+      storageBucket: "churros-levi.appspot.com",
+      messagingSenderId: "509825412186",
+      appId: "1:509825412186:web:7c665e2d44ab916d277c63"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Mostrar promociones dinámicamente
+    async function mostrarPromociones() {
+      const contenedor = document.getElementById("lista-promociones");
+      contenedor.innerHTML = "<p>Cargando promociones...</p>";
+
+      try {
+        const snapshot = await db.collection("promociones").orderBy("fecha", "desc").get();
+
+        if (snapshot.empty) {
+          contenedor.innerHTML = "<p>No hay promociones disponibles en este momento.</p>";
+          return;
+        }
+
+        contenedor.innerHTML = "";
+
+        snapshot.forEach(doc => {
+          const promo = doc.data();
+          const div = document.createElement("div");
+          div.className = "promo-card";
+          div.innerHTML = `
+            <img src="${promo.imagen}" alt="${promo.nombre}" />
+            <h3>${promo.nombre}</h3>
+            <p>Precio: $${promo.precio.toFixed(2)}</p>
+          `;
+          contenedor.appendChild(div);
+        });
+      } catch (error) {
+        contenedor.innerHTML = "<p>Error al cargar promociones. Intenta nuevamente más tarde.</p>";
+        console.error("Error al obtener promociones:", error);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", mostrarPromociones);
+  </script>
+
+  <style>
+    .promo-card {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 15px;
+      text-align: center;
+      background-color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .promo-card img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+    .container-products {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+  </style>
 </body>
 </html>
