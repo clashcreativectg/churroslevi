@@ -5,28 +5,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchForm = document.querySelector('.search-form');
   const searchInput = searchForm?.querySelector('input[type="search"]') || null;
 
-  // Función para actualizar el número en el carrito visualmente
   const updateCartNumber = (count) => {
     if (cartCount) {
       cartCount.textContent = `(${count})`;
     }
   };
 
-  // Obtener carrito de localStorage o inicializar vacío
   let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
-
-  // Calcular la cantidad total de productos en carrito
   let cartItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
-
-  // Actualizar contador inicial
   updateCartNumber(cartItems);
 
-  // Evento para agregar al carrito
   addToCartButtons.forEach(button => {
     button.addEventListener('click', () => {
       const card = button.closest('.card-product');
-
-      const productId = button.dataset.id || card?.dataset.id || `${Date.now()}`; // fallback id
+      const productId = button.dataset.id || card?.dataset.id || `${Date.now()}`;
       const productName = button.dataset.name || card?.querySelector('h3')?.textContent.trim();
       const productPriceRaw = button.dataset.price || card?.querySelector('.price')?.textContent.trim();
 
@@ -48,67 +40,47 @@ document.addEventListener('DOMContentLoaded', () => {
       if (existingProductIndex > -1) {
         carrito[existingProductIndex].cantidad++;
       } else {
-        carrito.push({
-          id: productId,
-          name: productName,
-          price: productPrice,
-          cantidad: 1
-        });
+        carrito.push({ id: productId, name: productName, price: productPrice, cantidad: 1 });
       }
 
       cartItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
       updateCartNumber(cartItems);
-
       localStorage.setItem('carrito', JSON.stringify(carrito));
-
       window.location.href = 'menu.html';
     });
   });
 
-  // Filtro de productos destacados
   filterOptions.forEach(option => {
     option.addEventListener('click', () => {
       filterOptions.forEach(opt => opt.classList.remove('active'));
       option.classList.add('active');
       alert(`Filtro seleccionado: ${option.textContent}`);
-      // Aquí puedes agregar lógica para filtrar productos según el texto
     });
   });
 
-  // Evento de búsqueda (simulación)
   if (searchForm && searchInput) {
     searchForm.addEventListener('submit', e => {
       e.preventDefault();
       const query = searchInput.value.trim();
       if (query) {
         alert(`Buscando: ${query}`);
-        // Aquí puedes agregar la lógica para filtrar o buscar productos
       } else {
         alert('Por favor ingresa un término de búsqueda.');
       }
     });
   }
 
-  // Preguntas Frecuentes - desplegar respuestas
   const faqButtons = document.querySelectorAll('.faq-question');
-
   faqButtons.forEach(button => {
     button.addEventListener('click', () => {
       const isExpanded = button.getAttribute('aria-expanded') === 'true';
       const answerId = button.getAttribute('aria-controls');
       const answer = document.getElementById(answerId);
-
-      if (isExpanded) {
-        button.setAttribute('aria-expanded', 'false');
-        answer.hidden = true;
-      } else {
-        button.setAttribute('aria-expanded', 'true');
-        answer.hidden = false;
-      }
+      button.setAttribute('aria-expanded', !isExpanded);
+      answer.hidden = isExpanded;
     });
   });
 
-  // Interacciones con los botones del grupo (Ver, Me gusta, Comparar)
   const actionIcons = document.querySelectorAll('.button-group span');
   actionIcons.forEach(icon => {
     icon.addEventListener('click', () => {
@@ -122,4 +94,27 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  // Menú hamburguesa con cierre al hacer clic fuera
+  const menuToggle = document.getElementById('menu-toggle');
+  const menu = document.getElementById('menu');
+
+  if (menuToggle && menu) {
+    menuToggle.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevenir cierre inmediato al hacer clic en el botón
+      menu.classList.toggle('active');
+    });
+
+    menu.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        menu.classList.remove('active');
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!menu.contains(e.target) && e.target !== menuToggle) {
+        menu.classList.remove('active');
+      }
+    });
+  }
 });
