@@ -213,6 +213,53 @@ html {
 	color: #fff;
 }
 
+/* =========================== */
+/*    MENÚ HAMBURGUESA CSS     */
+/* =========================== */
+
+/* Mostrar ícono hamburguesa solo en móviles */
+@media (max-width: 768px) {
+  .navbar .fa-bars {
+    display: block;
+    font-size: 2.5rem;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  /* Ocultar el menú inicialmente en móviles */
+  .menu {
+    display: none;
+    flex-direction: column;
+    background-color: var(--primary-color);
+    width: 100%;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    padding: 1rem 0;
+  }
+
+  /* Mostrar el menú cuando se activa */
+  .menu.active {
+    display: flex;
+  }
+
+  .menu li {
+    text-align: center;
+    padding: 1rem 0;
+  }
+
+  .menu a {
+    color: #fff;
+    font-size: 1.6rem;
+  }
+
+  .menu a:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    display: block;
+  }
+}
+
 /* ********************************** */
 /*               BANNER               */
 /* ********************************** */
